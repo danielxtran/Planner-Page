@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+@import './theme/theme.css';
+
+@layer base {
+  body {
+    @apply bg-paper text-ink antialiased;
+    min-height: 100vh;
+    /*
+     * Graph paper: two 1px line gradients (one vertical, one horizontal) tiled
+     * every --grid-size. No image file needed, and it scales crisply.
+     */
+    background-image:
+      linear-gradient(to right, var(--color-grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-grid-line) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+  }
+}

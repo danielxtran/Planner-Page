@@ -1,0 +1,32 @@
+/*
+ * Planner Hub theme tokens.
+ *
+ * Tailwind v4 reads `@theme`: every `--color-*` here becomes both a real CSS
+ * variable (var(--color-peach)) and utility classes (bg-peach, text-ink, ...).
+ * A future theme switcher only has to override these variables, e.g. on
+ * [data-theme='night'], and every component follows along.
+ *
+ * Contrast (WCAG AA needs 4.5:1 for body text): ink is >= 8.4:1 on paper and
+ * every pastel; ink-soft is >= 5:1. Re-check if you change any of these.
+ */
+@theme {
+  /* Paper + ink */
+  --color-paper: #fdf8ee;
+  --color-ink: #3d3550;
+  --color-ink-soft: #5e5672; /* secondary text */
+  --color-grid-line: #dbe6ef; /* faint blue, like real graph paper */
+
+  /* Pastels */
+  --color-peach: #ffd9c7;
+  --color-mint: #cdeedd;
+  --color-lavender: #e3dbf7;
+  --color-butter: #fff1b8;
+  --color-sky: #cfe6f7;
+  --color-rose: #f9d2df;
+
+  /* Fonts: Caveat is loaded in index.html */
+  --font-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+
+  /* Graph paper square size. Normal graph paper is ~20px; this is a bit roomier. */
+  --grid-size: 28px;
+}
