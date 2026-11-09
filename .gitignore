@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+*.local
+coverage/
+
+# Environment variables (commit .env.example instead)
+.env
+.env.*
+!.env.example
+
+# Hosting CLIs
+.netlify/
+.vercel/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Claude Code personal files (shared CLAUDE.md and .claude/settings.json stay committed)
+.claude/settings.local.json
+CLAUDE.local.md
