@@ -12,6 +12,7 @@
 @theme {
   /* Paper + ink */
   --color-paper: #fdf8ee;
+  --color-card: #fffdf9; /* widget background, a touch lighter than the paper */
   --color-ink: #3d3550;
   --color-ink-soft: #5e5672; /* secondary text */
   --color-grid-line: #dbe6ef; /* faint blue, like real graph paper */
@@ -29,4 +30,18 @@
 
   /* Graph paper square size. Normal graph paper is ~20px; this is a bit roomier. */
   --grid-size: 28px;
+
+  /* Checkbox "pop": the cubic-bezier overshoots past 1, giving a little bounce. */
+  --animate-pop: pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  @keyframes pop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.35);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
 }

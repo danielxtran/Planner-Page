@@ -1,3 +1,5 @@
+// Gives Node an in-memory IndexedDB so Dexie works in tests.
+import 'fake-indexeddb/auto'
 // Adds DOM matchers like toBeInTheDocument() to Vitest's expect.
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
