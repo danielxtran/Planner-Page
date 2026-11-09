@@ -1,12 +1,62 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import type { Task } from '../../storage/tasks'
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { DEFAULT_PRIORITY, type Task } from '../../storage/tasks'
+import { todayString } from './dates'
+import { FilterBar } from './FilterBar'
+import { TaskDetailsFields, type DetailsDraft } from './TaskDetailsFields'
+import {
+  applyFilter,
+  countActiveFilters,
+  DEFAULT_FILTER,
+  matchesFilter,
+  type TaskFilter,
+} from './taskFilter'
+import { TaskRow } from './TaskRow'
 import { useTasks } from './useTasks'
 
+const EMPTY_DETAILS: DetailsDraft = { priority: DEFAULT_PRIORITY, categoryId: null, dueDate: null }
+
 export function TodoWidget() {
-  const { tasks, loading, error, add, toggle, rename, remove, undo, undoLabel } = useTasks()
+  const {
+    tasks,
+    categories,
+    loading,
+    error,
+    add,
+    toggle,
+    edit,
+    remove,
+    createCategory,
+    undo,
+    undoLabel,
+  } = useTasks()
   const [draft, setDraft] = useState('')
+  const [draftDetails, setDraftDetails] = useState<DetailsDraft>(EMPTY_DETAILS)
+  // In memory for now; in milestones 3-4 the filter becomes saved widget config.
+  const [filter, setFilter] = useState<TaskFilter>(DEFAULT_FILTER)
+  // Title of a just-added task that the current filters hide, so it doesn't seem to vanish.
+  const [hiddenNotice, setHiddenNotice] = useState<string | null>(null)
   // Only the task just checked gets the pop, so done tasks don't all bounce on page load.
   const [poppedId, setPoppedId] = useState<string | null>(null)
+
+  const today = todayString()
+  const categoryById = new Map(categories.map((c) => [c.id, c]))
+  // Ignore categories that no longer exist (e.g. after undoing their creation),
+  // so a stale id can't silently filter everything out or fail an add.
+  const activeFilter: TaskFilter = {
+    ...filter,
+    categoryIds: filter.categoryIds.filter((id) => id === null || categoryById.has(id)),
+  }
+  const draftCategoryId =
+    draftDetails.categoryId && categoryById.has(draftDetails.categoryId)
+      ? draftDetails.categoryId
+      : null
+  const visible = applyFilter(tasks, activeFilter, today)
+  const filtering = countActiveFilters(activeFilter) > 0
+  const showDraftDetails =
+    draft.trim() !== '' ||
+    draftDetails.priority !== EMPTY_DETAILS.priority ||
+    draftCategoryId !== null ||
+    draftDetails.dueDate !== null
 
   // Ctrl/Cmd+Z anywhere on the page undoes the last task action, except while
   // typing in a field, where it keeps doing normal text undo.
@@ -21,10 +71,19 @@ export function TodoWidget() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [undo])
 
+  function changeFilter(next: TaskFilter) {
+    setFilter(next)
+    setHiddenNotice(null)
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!draft.trim()) return
-    if (await add(draft)) setDraft('')
+    const task = await add(draft, { ...draftDetails, categoryId: draftCategoryId })
+    if (!task) return
+    setDraft('')
+    setDraftDetails(EMPTY_DETAILS)
+    setHiddenNotice(matchesFilter(task, activeFilter, today) ? null : task.title)
   }
 
   // Right after quick-adding, the box is empty, so Ctrl+Z there has no text to
@@ -65,7 +124,8 @@ export function TodoWidget() {
         )}
       </header>
 
-      <form onSubmit={handleSubmit}>
+      {/* `group` lets the detail pickers show while anything in this form has focus. */}
+      <form aria-label="Add task" onSubmit={handleSubmit} className="group">
         <input
           type="text"
           value={draft}
@@ -75,7 +135,22 @@ export function TodoWidget() {
           placeholder="Add a task and press Enter"
           className="w-full rounded-sm border-2 border-dashed border-ink/25 bg-paper px-3 py-2 placeholder:text-ink-soft focus:border-solid focus:border-ink/50 focus:outline-none"
         />
+        {/* Tucked away until you're adding something, so the widget stays calm. */}
+        <div
+          className={`mt-2 flex-wrap items-center gap-2 ${showDraftDetails ? 'flex' : 'hidden group-focus-within:flex'}`}
+        >
+          <TaskDetailsFields
+            value={{ ...draftDetails, categoryId: draftCategoryId }}
+            onChange={setDraftDetails}
+            categories={categories}
+            onCreateCategory={createCategory}
+          />
+        </div>
       </form>
+
+      {tasks.length > 0 && (
+        <FilterBar filter={activeFilter} onChange={changeFilter} categories={categories} />
+      )}
 
       {error && (
         <p role="alert" className="mt-3 rounded-sm bg-rose px-3 py-2 text-sm">
@@ -83,23 +158,49 @@ export function TodoWidget() {
         </p>
       )}
 
+      {hiddenNotice && (
+        <p role="status" className="mt-3 rounded-sm bg-butter px-3 py-2 text-sm">
+          Added "{hiddenNotice}", but your filters are hiding it.{' '}
+          <button
+            type="button"
+            onClick={() => changeFilter({ ...DEFAULT_FILTER, sort: filter.sort })}
+            className="underline underline-offset-2"
+          >
+            Show all
+          </button>
+        </p>
+      )}
+
       {loading ? (
         <p className="mt-4 text-ink-soft">Loading…</p>
       ) : tasks.length === 0 ? (
         <p className="mt-4 font-hand text-2xl text-ink-soft">Nothing to do. Enjoy it!</p>
+      ) : visible.length === 0 ? (
+        <p className="mt-4 font-hand text-2xl text-ink-soft">No tasks match these filters.</p>
       ) : (
-        <ul className="mt-3">
-          {tasks.map((task) => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              popping={task.id === poppedId && task.done}
-              onToggle={() => handleToggle(task)}
-              onRename={(title) => void rename(task, title)}
-              onRemove={() => void remove(task)}
-            />
-          ))}
-        </ul>
+        <>
+          {filtering && (
+            <p className="mt-3 text-xs text-ink-soft">
+              Showing {visible.length} of {tasks.length}
+            </p>
+          )}
+          <ul className="mt-2">
+            {visible.map((task) => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                category={task.categoryId ? categoryById.get(task.categoryId) : undefined}
+                categories={categories}
+                today={today}
+                popping={task.id === poppedId && task.done}
+                onToggle={() => handleToggle(task)}
+                onSave={(changes) => void edit(task, changes)}
+                onRemove={() => void remove(task)}
+                onCreateCategory={createCategory}
+              />
+            ))}
+          </ul>
+        </>
       )}
 
       {undoLabel && (
@@ -115,149 +216,6 @@ export function TodoWidget() {
         </div>
       )}
     </section>
-  )
-}
-
-interface TaskRowProps {
-  task: Task
-  popping: boolean
-  onToggle: () => void
-  onRename: (title: string) => void
-  onRemove: () => void
-}
-
-function TaskRow({ task, popping, onToggle, onRename, onRemove }: TaskRowProps) {
-  const [editing, setEditing] = useState(false)
-  const [titleDraft, setTitleDraft] = useState(task.title)
-  // Enter/Escape end editing, then the input unmounting can fire blur as well.
-  // This flag makes sure only the first of those counts.
-  const finished = useRef(false)
-  const refocusEditButton = useRef(false)
-  const editButton = useRef<HTMLButtonElement>(null)
-
-  // After Enter/Escape, put keyboard focus back on the pencil instead of losing it.
-  useEffect(() => {
-    if (!editing && refocusEditButton.current) {
-      refocusEditButton.current = false
-      editButton.current?.focus()
-    }
-  }, [editing])
-
-  function startEditing() {
-    finished.current = false
-    setTitleDraft(task.title)
-    setEditing(true)
-  }
-
-  function finishEditing(save: boolean, returnFocus: boolean) {
-    if (finished.current) return
-    finished.current = true
-    // Clearing the title counts as "never mind", not a save; deleting is the × button's job.
-    if (save && titleDraft.trim()) onRename(titleDraft)
-    refocusEditButton.current = returnFocus
-    setEditing(false)
-  }
-
-  function handleEditKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      finishEditing(true, true)
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      finishEditing(false, true)
-    }
-  }
-
-  if (editing) {
-    return (
-      <li className="flex items-center gap-3 border-b border-dashed border-ink/15 py-2 last:border-b-0">
-        {/* Spacer the size of the checkbox so the text doesn't jump sideways. */}
-        <span aria-hidden className="size-5 shrink-0" />
-        <input
-          type="text"
-          autoFocus
-          value={titleDraft}
-          onChange={(e) => setTitleDraft(e.target.value)}
-          onKeyDown={handleEditKeyDown}
-          onBlur={() => finishEditing(true, false)}
-          // Caret at the end, the usual spot for fixing a typo or adding a word.
-          onFocus={(e) => {
-            const end = e.currentTarget.value.length
-            e.currentTarget.setSelectionRange(end, end)
-          }}
-          aria-label={`Edit title of "${task.title}"`}
-          className="min-w-0 flex-1 rounded-sm border-2 border-ink/50 bg-paper px-2 py-0.5 focus:outline-none"
-        />
-      </li>
-    )
-  }
-
-  return (
-    <li className="group flex items-center gap-3 border-b border-dashed border-ink/15 py-2 last:border-b-0">
-      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-        <span className="relative grid shrink-0 place-items-center">
-          {/* A real checkbox restyled with appearance-none keeps keyboard and screen-reader support. */}
-          <input
-            type="checkbox"
-            checked={task.done}
-            onChange={onToggle}
-            className={`peer size-5 cursor-pointer appearance-none rounded-full border-2 border-ink/50 bg-card transition-colors checked:border-ink checked:bg-mint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${popping ? 'motion-safe:animate-pop' : ''}`}
-          />
-          <svg
-            aria-hidden
-            viewBox="0 0 12 12"
-            className="pointer-events-none absolute size-3 text-ink opacity-0 peer-checked:opacity-100"
-          >
-            <path
-              d="M2.5 6.5l2.5 2.5 4.5-5.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-        <span
-          className={`relative min-w-0 break-words transition-colors ${task.done ? 'text-ink-soft' : ''}`}
-        >
-          {task.title}
-          {/* Hand-drawn-ish strike line that sweeps left to right when checked. */}
-          <span
-            aria-hidden
-            className={`absolute top-1/2 left-0 h-0.5 w-full origin-left rounded-full bg-ink/60 transition-transform duration-300 ease-out motion-reduce:transition-none ${task.done ? 'scale-x-100' : 'scale-x-0'}`}
-          />
-        </span>
-      </label>
-      {/* Hidden until hover/focus on mouse devices; always visible on touch screens. */}
-      <div className="flex shrink-0 items-center gap-0.5 group-focus-within:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100">
-        <button
-          ref={editButton}
-          type="button"
-          onClick={startEditing}
-          aria-label={`Edit "${task.title}"`}
-          className="grid size-7 place-items-center rounded-full text-ink-soft hover:bg-butter hover:text-ink"
-        >
-          <svg aria-hidden viewBox="0 0 16 16" className="size-3.5">
-            <path
-              d="M11 2.5l2.5 2.5L6 12.5l-3 .5.5-3z"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Delete "${task.title}"`}
-          className="grid size-7 place-items-center rounded-full text-lg leading-none text-ink-soft hover:bg-rose hover:text-ink"
-        >
-          ×
-        </button>
-      </div>
-    </li>
   )
 }
 
