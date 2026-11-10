@@ -1,5 +1,6 @@
 import { Dexie, type EntityTable } from 'dexie'
 import type { Category } from './categories'
+import type { StoredImage } from './images'
 import type { Note } from './notes'
 import type { Page } from './pages'
 import type { Task } from './tasks'
@@ -10,6 +11,7 @@ export const db = new Dexie('planner-hub') as Dexie & {
   categories: EntityTable<Category, 'id'>
   pages: EntityTable<Page, 'id'>
   notes: EntityTable<Note, 'id'>
+  images: EntityTable<StoredImage, 'id'>
 }
 
 // Schema strings list the primary key first, then indexed fields only.
@@ -64,3 +66,8 @@ db.version(4)
         page.theme ??= 'graph'
       }),
   )
+
+// v5: an images table for image widgets. New table, nothing to migrate.
+db.version(5).stores({
+  images: 'id, userId, createdAt',
+})

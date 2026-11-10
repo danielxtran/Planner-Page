@@ -9,6 +9,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Vitest skips CSS by default (it would come through empty). theme.css is
+    // processed so textStyles.test.ts can read its real colors via `?raw`.
+    css: { include: [/theme\.css/] },
     // Default is 5s; full UI flows against IndexedDB can exceed that under parallel load.
     testTimeout: 15_000,
   },

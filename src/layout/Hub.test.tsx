@@ -250,6 +250,19 @@ describe('Hub', () => {
       expect(notes[0].config.noteId).not.toBe(notes[1].config.noteId)
     })
 
+    it('adds a quote from the menu, named after its look', async () => {
+      await renderHub()
+      startEditing()
+      fireEvent.click(button('Add widget to column 1 of row 1'))
+      fireEvent.click(button(/^Quote/))
+
+      expect(await screen.findByRole('textbox', { name: 'Quote text' })).toBeInTheDocument()
+      expect(button('Move Quote widget')).toBeInTheDocument()
+      expect(await screen.findByText('Last: add Quote')).toBeInTheDocument()
+      const widgets = (await savedRows())[0].columns[0].widgets
+      expect(widgets[1]).toMatchObject({ type: 'text', config: { variant: 'quote' } })
+    })
+
     it('switches theme, saves it, and undoes it', async () => {
       await renderHub()
       expect(document.documentElement.dataset.theme).toBe('graph')

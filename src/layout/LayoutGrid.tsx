@@ -62,8 +62,11 @@ export function LayoutGrid({ rows, editing, onCommit }: LayoutGridProps) {
   const actions: EditorActions = {
     applyPreset: (rowId, widths) => onCommit('change row layout', applyPreset(rows, rowId, widths)),
     removeRow: (rowId) => onCommit('remove row', removeRow(rows, rowId)),
-    addWidget: (columnId, type) =>
-      onCommit(`add ${widgetName(type)}`, addWidget(rows, columnId, createWidget(type))),
+    addWidget: (columnId, type, starter) =>
+      onCommit(
+        `add ${starter.label}`,
+        addWidget(rows, columnId, createWidget(type, starter.config())),
+      ),
     removeWidget: (widgetId) =>
       onCommit(
         `remove ${widgetName(findWidget(rows, widgetId)?.widget.type)}`,

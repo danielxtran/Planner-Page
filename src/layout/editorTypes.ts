@@ -5,11 +5,13 @@ export interface DragData {
   label: string
 }
 
+import type { WidgetStarter } from '../widgets/registry'
+
 /** Edits the grid's rows and columns can ask for. LayoutGrid applies them to the saved layout. */
 export interface EditorActions {
   applyPreset: (rowId: string, widths: readonly number[]) => void
   removeRow: (rowId: string) => void
-  addWidget: (columnId: string, type: string) => void
+  addWidget: (columnId: string, type: string, starter: WidgetStarter) => void
   removeWidget: (widgetId: string) => void
   /** `delta` in twelfths from the drag start; null means the drag ended or was cancelled. */
   previewResize: (rowId: string, leftIndex: number, delta: number | null) => void

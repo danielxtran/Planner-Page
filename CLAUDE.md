@@ -24,5 +24,5 @@ Getting started / build order: https://claude.ai/artifact/LStFSPnnFozn5h4iXFN1Kh
 
 ## Build order
 1. To-do list saved to Dexie  2. Priority/category/due date + filter bar  3. Grid editor
-4. Saved filters as widgets  5. Notes + bullet-journal theme  6. Calendars (Canvas, Google, Outlook)
+4. Saved filters as widgets  5. Notes + bullet-journal theme  6. Calendars (Canvas, Google, Outlook) + embeds
 7. Journal  8. Custom tags, JSON backup export, polish

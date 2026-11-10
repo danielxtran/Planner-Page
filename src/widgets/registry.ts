@@ -1,5 +1,9 @@
 import { lazy, type ComponentType } from 'react'
 import type { WidgetInstance } from '../storage/pages'
+import { ImageWidget } from './image/ImageWidget'
+import { IMAGE_STARTERS, imageStarterConfig } from './image/imageConfig'
+import { readTextConfig, TEXT_STARTERS, textStarterConfig, variantLabel } from './text/textConfig'
+import { TextWidget } from './text/TextWidget'
 import { TodoWidget } from './todo/TodoWidget'
 
 // The notes editor (TipTap + ProseMirror) is most of the app's size, so it's
@@ -21,15 +25,29 @@ export interface WidgetProps {
   onAddBelow: (widget: WidgetInstance, label: string) => void
 }
 
+/** One entry in "+ Add widget": a widget type with a particular starting look. */
+export interface WidgetStarter {
+  label: string
+  description: string
+  config: () => Record<string, unknown>
+}
+
 export interface WidgetDefinition {
   /** Stored in WidgetInstance.type. Never rename one: saved layouts refer to it. */
   type: string
   label: string
   /** Heading shown until the user renames the widget. */
   defaultTitle: string
+  /** A default name that depends on the settings (a text block styled as a quote is "Quote"). */
+  titleFor?: (config: Record<string, unknown>) => string
   description: string
   Component: ComponentType<WidgetProps>
   defaultConfig: () => Record<string, unknown>
+  /**
+   * Several starting looks for one type, each its own entry in the add menu.
+   * Sharing one type means a block can switch look later without being recreated.
+   */
+  starters?: readonly WidgetStarter[]
 }
 
 /**
@@ -59,7 +77,43 @@ export const WIDGET_DEFINITIONS: readonly WidgetDefinition[] = [
     // The note's id is picked now, but its record is only written once you type.
     defaultConfig: () => ({ noteId: crypto.randomUUID() }),
   },
+  {
+    type: 'text',
+    label: 'Text block',
+    defaultTitle: 'Text',
+    titleFor: (config) => variantLabel(readTextConfig(config).variant),
+    description: 'Styled text: quotes, callouts, labels, and sticky notes.',
+    Component: TextWidget,
+    defaultConfig: () => ({ ...textStarterConfig({}) }),
+    starters: TEXT_STARTERS.map((s) => ({
+      label: s.label,
+      description: s.description,
+      config: () => ({ ...textStarterConfig(s.config) }),
+    })),
+  },
+  {
+    type: 'image',
+    label: 'Image',
+    defaultTitle: 'Image',
+    description: 'A photo or picture from your computer, with an optional frame and caption.',
+    Component: ImageWidget,
+    defaultConfig: () => ({ ...imageStarterConfig({}) }),
+    starters: IMAGE_STARTERS.map((s) => ({
+      label: s.label,
+      description: s.description,
+      config: () => ({ ...imageStarterConfig(s.config) }),
+    })),
+  },
 ]
+
+/** Every entry for the add menu: a type's starters, or the type itself if it has none. */
+export function addMenuItems(): { type: string; starter: WidgetStarter }[] {
+  return WIDGET_DEFINITIONS.flatMap((d) =>
+    (d.starters ?? [{ label: d.label, description: d.description, config: d.defaultConfig }]).map(
+      (starter) => ({ type: d.type, starter }),
+    ),
+  )
+}
 
 export function getWidgetDefinition(type: string): WidgetDefinition | undefined {
   return WIDGET_DEFINITIONS.find((d) => d.type === type)
@@ -78,5 +132,7 @@ export function createWidget(type: string, config?: Record<string, unknown>): Wi
 export function widgetTitle(widget: WidgetInstance): string {
   const title = widget.config.title
   if (typeof title === 'string' && title.trim()) return title.trim()
-  return getWidgetDefinition(widget.type)?.defaultTitle ?? 'Unknown widget'
+  const definition = getWidgetDefinition(widget.type)
+  if (!definition) return 'Unknown widget'
+  return definition.titleFor?.(widget.config) ?? definition.defaultTitle
 }

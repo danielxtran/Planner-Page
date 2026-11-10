@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { assertValidRows, type Row } from '../storage/pages'
-import { createWidget, WIDGET_DEFINITIONS } from './registry'
+import { addMenuItems, createWidget, getWidgetDefinition, WIDGET_DEFINITIONS } from './registry'
 
 /**
  * Any widget type can be placed as many times as you like (two to-do lists,
@@ -17,11 +17,20 @@ describe.each(WIDGET_DEFINITIONS.map((d) => [d.type]))('the %s widget', (type) =
     // Not one shared object: changing one copy's settings must never change the other's.
     expect(first.config).not.toBe(second.config)
     // Any id inside the settings (like a note's id) must be different per copy too.
+    // (An id that's still empty, like an image not chosen yet, can't be shared.)
     const ids = (config: Record<string, unknown>) =>
-      Object.entries(config).filter(([key]) => key.endsWith('Id'))
+      Object.entries(config).filter(([key, value]) => key.endsWith('Id') && value != null)
     for (const [key, value] of ids(first.config)) expect(second.config[key]).not.toBe(value)
 
     const rows: Row[] = [{ id: 'r', columns: [{ id: 'c', width: 12, widgets: [first, second] }] }]
     expect(() => assertValidRows(rows)).not.toThrow()
   })
+})
+
+it('every add-menu starter makes a valid widget of its type', () => {
+  for (const { type, starter } of addMenuItems()) {
+    const widget = createWidget(type, starter.config())
+    expect(getWidgetDefinition(widget.type)).toBeDefined()
+    expect(typeof widget.config).toBe('object')
+  }
 })

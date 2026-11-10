@@ -56,6 +56,80 @@
   }
 }
 
+/* ---- Text and image widget looks ---- */
+@layer components {
+  /* A strip of paper with torn ends, slightly crooked, like a cut-out label. */
+  .cutout-label {
+    rotate: -1.2deg;
+    box-shadow: 2px 3px 0 rgb(61 53 80 / 0.14);
+    clip-path: polygon(
+      2% 0,
+      98% 4%,
+      100% 30%,
+      98.5% 55%,
+      100% 80%,
+      97% 100%,
+      3% 96%,
+      0 72%,
+      1.5% 48%,
+      0 22%
+    );
+  }
+
+  /* A square-ish sticky note, tilted, with a strip of tape. */
+  .sticky-note {
+    position: relative;
+    rotate: 1deg;
+    box-shadow: 3px 4px 0 rgb(61 53 80 / 0.12);
+  }
+  .sticky-note::before {
+    content: '';
+    position: absolute;
+    top: -0.6rem;
+    left: 50%;
+    width: 4.5rem;
+    height: 1.2rem;
+    translate: -50% 0;
+    rotate: -3deg;
+    background-color: color-mix(in srgb, var(--color-lavender) 80%, transparent);
+  }
+
+  /* Instant-film frame: thin white border, thick bottom for the caption. */
+  .polaroid-frame {
+    background-color: #fffefb;
+    padding: 0.75rem 0.75rem 0;
+    rotate: -1deg;
+    box-shadow: 3px 4px 0 rgb(61 53 80 / 0.15);
+  }
+  .polaroid-caption {
+    background-color: #fffefb;
+    margin-top: 0;
+    padding: 0.4rem 0.75rem 0.9rem;
+    rotate: -1deg;
+    color: #3d3550;
+    box-shadow: 3px 4px 0 rgb(61 53 80 / 0.15);
+  }
+
+  /* Two short tape pieces holding a photo's top corners. --tape picks their color. */
+  .tape-corner {
+    position: absolute;
+    z-index: 1;
+    top: -0.25rem;
+    width: 4rem;
+    height: 1.3rem;
+    --tape: var(--color-rose);
+  }
+  .tape-corner-left {
+    left: -0.5rem;
+    rotate: -35deg;
+  }
+  .tape-corner-right {
+    right: -0.5rem;
+    rotate: 35deg;
+    --tape: var(--color-sky);
+  }
+}
+
 /* ---- Bullet journal theme (colors are in theme/theme.css) ---- */
 
 /* Dot grid instead of graph lines: one radial-gradient dot per tile. */

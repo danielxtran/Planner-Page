@@ -61,7 +61,10 @@ export function ColumnView(props: ColumnViewProps) {
         </div>
       </SortableContext>
       {editing && (
-        <AddWidgetMenu label={label} onAdd={(type) => actions.addWidget(column.id, type)} />
+        <AddWidgetMenu
+          label={label}
+          onAdd={(type, starter) => actions.addWidget(column.id, type, starter)}
+        />
       )}
       {editing && next && (
         <ColumnResizer
