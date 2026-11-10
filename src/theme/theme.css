@@ -3,11 +3,12 @@
  *
  * Tailwind v4 reads `@theme`: every `--color-*` here becomes both a real CSS
  * variable (var(--color-peach)) and utility classes (bg-peach, text-ink, ...).
- * A future theme switcher only has to override these variables, e.g. on
- * [data-theme='night'], and every component follows along.
+ * Themes override these variables under [data-theme='...'] (see the bottom of
+ * this file), and every component follows along. The theme ids live in themes.ts.
  *
- * Contrast (WCAG AA needs 4.5:1 for body text): ink is >= 8.4:1 on paper and
- * every pastel; ink-soft is >= 5:1. Re-check if you change any of these.
+ * Contrast (WCAG AA needs 4.5:1 for body text), measured for both themes:
+ * ink is >= 8.4:1 on paper, card, and every pastel; ink-soft is >= 4.9:1.
+ * Re-check if you change any of these.
  */
 @theme {
   /* Paper + ink */
@@ -44,4 +45,33 @@
       transform: scale(1);
     }
   }
+}
+
+/* Card look, as plain variables (not @theme: they aren't Tailwind colors). */
+:root {
+  --card-shadow: 2px 3px 0 rgb(61 53 80 / 0.12);
+  --card-border: transparent;
+}
+
+/*
+ * Bullet journal: warm cream paper with a dot grid, brown-black ink, dustier
+ * pastels, striped washi tape, and bujo bullets (• to do, × done) for tasks.
+ * Unlayered on purpose: unlayered CSS beats Tailwind's layers, so these win.
+ */
+:root[data-theme='bujo'] {
+  --color-paper: #f7f1e3;
+  --color-card: #fffaf0;
+  --color-ink: #3a2f28;
+  --color-ink-soft: #64554a;
+  --color-grid-line: #cdbfa6; /* the dots */
+
+  --color-peach: #f4d2bf;
+  --color-mint: #d5e6cf;
+  --color-lavender: #e2d6ea;
+  --color-butter: #f5e4a8;
+  --color-sky: #d2e1ea;
+  --color-rose: #f1cdd2;
+
+  --card-shadow: 1px 2px 0 rgb(58 47 40 / 0.1);
+  --card-border: rgb(58 47 40 / 0.16);
 }

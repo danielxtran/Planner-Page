@@ -164,7 +164,8 @@ export function TaskRow(props: TaskRowProps) {
   return (
     <li className="group flex items-center gap-3 border-b border-dashed border-ink/15 py-2 last:border-b-0">
       <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-        <span className="relative grid shrink-0 place-items-center">
+        {/* `task-check` lets the bullet-journal theme swap the circle for a • / × bullet. */}
+        <span className="task-check relative grid shrink-0 place-items-center">
           {/* A real checkbox restyled with appearance-none keeps keyboard and screen-reader support. */}
           <input
             type="checkbox"
@@ -189,6 +190,7 @@ export function TaskRow(props: TaskRowProps) {
               strokeLinejoin="round"
             />
           </svg>
+          <span aria-hidden className="bujo-bullet" />
         </span>
         <span className="flex min-w-0 flex-col">
           <span

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { useState } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { UndoControls } from '../../layout/UndoControls'
 import { db } from '../../storage/db'
@@ -6,11 +7,26 @@ import { addDaysTo, todayString } from './dates'
 import { initialTasksState, useTasksStore } from './tasksStore'
 import { TodoWidget } from './TodoWidget'
 
+/**
+ * The widget on its own, with its settings kept in React state in place of the
+ * page layout. (Saved-filter behavior through the real layout is tested in Hub.test.tsx.)
+ */
+function StandaloneTodo() {
+  const [config, setConfig] = useState<Record<string, unknown>>({})
+  return (
+    <TodoWidget
+      widget={{ id: 'w1', type: 'todo', config }}
+      onConfigChange={(_label, next) => setConfig(next)}
+      onAddBelow={() => {}}
+    />
+  )
+}
+
 // Undo lives in the hub toolbar now, so tests render its controls beside the widget.
 const widgetWithUndo = (
   <>
     <UndoControls />
-    <TodoWidget />
+    <StandaloneTodo />
   </>
 )
 
@@ -52,7 +68,7 @@ describe('TodoWidget', () => {
     // Like a page refresh: drop the in-memory store so the next mount reads IndexedDB again.
     unmount()
     useTasksStore.setState(initialTasksState)
-    render(<TodoWidget />)
+    render(<StandaloneTodo />)
     expect(await screen.findByRole('checkbox', { name: 'Buy washi tape' })).not.toBeChecked()
   })
 

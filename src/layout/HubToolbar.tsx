@@ -1,4 +1,5 @@
 import { useErrorStore } from '../state/errorStore'
+import { ThemePicker } from './ThemePicker'
 import { UndoControls } from './UndoControls'
 
 interface HubToolbarProps {
@@ -6,7 +7,7 @@ interface HubToolbarProps {
   onToggleEditing: () => void
 }
 
-/** Sticky bar above the grid: edit-mode toggle, Undo, and any error message. */
+/** Sticky bar above the grid: edit-mode toggle, Undo, theme, and any error message. */
 export function HubToolbar({ editing, onToggleEditing }: HubToolbarProps) {
   const error = useErrorStore((s) => s.message)
   const clearError = useErrorStore((s) => s.clear)
@@ -26,6 +27,9 @@ export function HubToolbar({ editing, onToggleEditing }: HubToolbarProps) {
           {editing ? 'Done editing' : 'Edit layout'}
         </button>
         <UndoControls />
+        <div className="ml-auto">
+          <ThemePicker />
+        </div>
       </div>
       {error && (
         <div

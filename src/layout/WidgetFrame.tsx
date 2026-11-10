@@ -1,9 +1,11 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Suspense } from 'react'
 import type { WidgetInstance } from '../storage/pages'
-import { getWidgetDefinition } from '../widgets/registry'
+import { getWidgetDefinition, widgetTitle } from '../widgets/registry'
 import { DragHandle } from './DragHandle'
 import type { DragData } from './editorTypes'
+import { useLayoutStore } from './layoutStore'
 
 interface WidgetFrameProps {
   widget: WidgetInstance
@@ -14,7 +16,15 @@ interface WidgetFrameProps {
 /** Renders one placed widget; in edit mode adds a strip with a drag handle and remove button. */
 export function WidgetFrame({ widget, editing, onRemove }: WidgetFrameProps) {
   const definition = getWidgetDefinition(widget.type)
-  const name = definition?.label ?? 'Unknown widget'
+  const title = widgetTitle(widget)
+  // A renamed widget goes by its name ("School widget"); otherwise by its kind ("To-do list widget").
+  const name = !definition
+    ? 'Unknown widget'
+    : title === definition.defaultTitle
+      ? definition.label
+      : title
+  const setWidgetConfig = useLayoutStore((s) => s.setWidgetConfig)
+  const addWidgetAfter = useLayoutStore((s) => s.addWidgetAfter)
   const data: DragData = { type: 'widget', label: `${name} widget` }
   const {
     attributes,
@@ -55,7 +65,13 @@ export function WidgetFrame({ widget, editing, onRemove }: WidgetFrameProps) {
         </div>
       )}
       {Component ? (
-        <Component widget={widget} />
+        <Suspense fallback={<p className="widget-card rounded-sm p-5 text-ink-soft">Loading…</p>}>
+          <Component
+            widget={widget}
+            onConfigChange={(label, config) => void setWidgetConfig(widget.id, label, config)}
+            onAddBelow={(added, label) => void addWidgetAfter(widget.id, added, label)}
+          />
+        </Suspense>
       ) : (
         // A layout saved by a newer version (or a removed widget type) still renders.
         <p className="rounded-sm border border-dashed border-ink/30 bg-card p-4 text-sm text-ink-soft">

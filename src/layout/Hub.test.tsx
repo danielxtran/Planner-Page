@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { db } from '../storage/db'
+import { readTodoConfig } from '../widgets/todo/todoConfig'
 import { Hub } from './Hub'
 import { initialLayoutState, useLayoutStore } from './layoutStore'
 
@@ -150,5 +151,118 @@ describe('Hub', () => {
     await screen.findByRole('heading', { name: 'To-do' })
     fireEvent.click(button('Edit layout'))
     expect(row(2)).toBeInTheDocument()
+  })
+
+  describe('saved filters (milestone 4)', () => {
+    async function addTask(title: string) {
+      const input = screen.getAllByRole('textbox', { name: 'New task' })[0]
+      fireEvent.change(input, { target: { value: title } })
+      fireEvent.submit(input)
+      await screen.findAllByRole('checkbox', { name: title })
+    }
+
+    const savedTodoConfigs = async () =>
+      (await savedRows()).flatMap((r) =>
+        r.columns.flatMap((c) => c.widgets.map((w) => readTodoConfig(w.config))),
+      )
+
+    it("saves a widget's filter in the layout, and undoes a change", async () => {
+      await renderHub()
+      await addTask('Read chapter 3')
+      fireEvent.click(button(/^Filters/))
+      fireEvent.click(button('To do'))
+
+      await waitFor(async () => expect((await savedTodoConfigs())[0].filter.status).toBe('open'))
+      expect(await screen.findByText('Last: change filter')).toBeInTheDocument()
+
+      fireEvent.click(button(/undo/i))
+      await waitFor(async () => expect((await savedTodoConfigs())[0].filter.status).toBe('all'))
+    })
+
+    it('saves a filter as a new widget below, titled after the filter', async () => {
+      await renderHub()
+      await addTask('Read chapter 3')
+      fireEvent.click(button(/^Filters/))
+      fireEvent.click(button('Next 7 days'))
+      fireEvent.click(await screen.findByRole('button', { name: '+ Save as widget' }))
+
+      expect(await screen.findByRole('heading', { name: 'Next 7 days' })).toBeInTheDocument()
+      const configs = await savedTodoConfigs()
+      expect(configs).toHaveLength(2)
+      expect(configs[1]).toMatchObject({ title: 'Next 7 days', filter: { due: 'next7' } })
+    })
+
+    it('renames a widget', async () => {
+      await renderHub()
+      fireEvent.click(button('Rename "To-do"'))
+      const input = screen.getByRole('textbox', { name: 'Widget title' })
+      fireEvent.change(input, { target: { value: 'School' } })
+      fireEvent.keyDown(input, { key: 'Enter' })
+
+      expect(await screen.findByRole('heading', { name: 'School' })).toBeInTheDocument()
+      await waitFor(async () => expect((await savedTodoConfigs())[0].title).toBe('School'))
+      // In edit mode the widget now goes by its new name.
+      startEditing()
+      expect(button('Move School widget')).toBeInTheDocument()
+    })
+
+    it('fills in quick-add from the filter so new tasks stay visible', async () => {
+      await renderHub()
+      await addTask('Something')
+      fireEvent.click(button(/^Filters/))
+      fireEvent.click(button('Top'))
+      await waitFor(async () =>
+        expect((await savedTodoConfigs())[0].filter.priorities).toEqual([1]),
+      )
+
+      await addTask('Urgent thing')
+      expect(screen.queryByText(/your filters are hiding it/)).toBeNull()
+      const added = (await db.tasks.toArray()).find((t) => t.title === 'Urgent thing')
+      expect(added?.priority).toBe(1)
+    })
+  })
+
+  describe('notes and themes (milestone 5)', () => {
+    it('adds a notes widget', async () => {
+      await renderHub()
+      startEditing()
+      fireEvent.click(button('Add widget to column 1 of row 1'))
+      fireEvent.click(button(/^Notes/))
+      expect(await screen.findByRole('heading', { name: 'Notes' })).toBeInTheDocument()
+      expect(await screen.findByRole('textbox', { name: 'Notes text' })).toBeInTheDocument()
+      const widgets = (await savedRows())[0].columns[0].widgets
+      expect(widgets.map((w) => w.type)).toEqual(['todo', 'notes'])
+      expect(widgets[1].config.noteId).toEqual(expect.any(String))
+    })
+
+    it('holds two notes widgets, each with its own note', async () => {
+      await renderHub()
+      startEditing()
+      for (let i = 0; i < 2; i++) {
+        fireEvent.click(button('Add widget to column 1 of row 1'))
+        fireEvent.click(button(/^Notes/))
+      }
+      await waitFor(() =>
+        expect(screen.getAllByRole('textbox', { name: 'Notes text' })).toHaveLength(2),
+      )
+      const notes = (await savedRows())[0].columns[0].widgets.filter((w) => w.type === 'notes')
+      expect(notes).toHaveLength(2)
+      expect(notes[0].config.noteId).not.toBe(notes[1].config.noteId)
+    })
+
+    it('switches theme, saves it, and undoes it', async () => {
+      await renderHub()
+      expect(document.documentElement.dataset.theme).toBe('graph')
+
+      fireEvent.click(button('Bullet journal'))
+      await waitFor(() => expect(document.documentElement.dataset.theme).toBe('bujo'))
+      expect(button('Bullet journal')).toHaveAttribute('aria-pressed', 'true')
+      expect(await screen.findByText('Last: change theme')).toBeInTheDocument()
+      expect((await db.pages.toArray())[0].theme).toBe('bujo')
+
+      fireEvent.click(button(/undo/i))
+      await waitFor(() => expect(document.documentElement.dataset.theme).toBe('graph'))
+      expect((await db.pages.toArray())[0].theme).toBe('graph')
+    })
   })
 })

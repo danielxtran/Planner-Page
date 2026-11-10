@@ -31,10 +31,12 @@ interface FilterBarProps {
   filter: TaskFilter
   onChange: (filter: TaskFilter) => void
   categories: Category[]
+  /** Copies the current filter into a new widget. Offered only while something is filtered. */
+  onSaveAsWidget?: () => void
 }
 
 /** Sort menu plus a collapsible panel of filter chips. Collapsed by default to keep things calm. */
-export function FilterBar({ filter, onChange, categories }: FilterBarProps) {
+export function FilterBar({ filter, onChange, categories, onSaveAsWidget }: FilterBarProps) {
   const [open, setOpen] = useState(false)
   const panelId = useId()
   const active = countActiveFilters(filter)
@@ -71,6 +73,16 @@ export function FilterBar({ filter, onChange, categories }: FilterBarProps) {
             className="rounded-full px-2 py-1 text-ink-soft underline decoration-dashed underline-offset-4 hover:text-ink"
           >
             Clear filters
+          </button>
+        )}
+        {active > 0 && onSaveAsWidget && (
+          <button
+            type="button"
+            onClick={onSaveAsWidget}
+            title="Keep this filter as its own widget, right below this one"
+            className="rounded-full border border-ink/25 bg-butter px-2.5 py-1 hover:bg-butter/70"
+          >
+            + Save as widget
           </button>
         )}
       </div>

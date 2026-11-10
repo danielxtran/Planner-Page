@@ -28,11 +28,16 @@ export interface Row {
   columns: Column[]
 }
 
+/** Theme for pages created before themes existed, and for brand-new pages. */
+export const DEFAULT_PAGE_THEME = 'graph'
+
 /** A hub page. The whole layout lives inside one record, so one save = one consistent layout. */
 export interface Page {
   id: string
   userId: string
   name: string
+  /** Which look the page uses, e.g. 'graph' or 'bujo'. The list of themes lives in src/theme/. */
+  theme: string
   rows: Row[]
   createdAt: string
   updatedAt: string
@@ -56,6 +61,7 @@ export async function getHomePage(defaultRows: () => Row[]): Promise<Page> {
       id: crypto.randomUUID(),
       userId: LOCAL_USER_ID,
       name: 'Home',
+      theme: DEFAULT_PAGE_THEME,
       rows,
       createdAt: now,
       updatedAt: now,
@@ -68,10 +74,20 @@ export async function getHomePage(defaultRows: () => Row[]): Promise<Page> {
 /** Replaces a page's layout. Rejects a malformed layout without saving anything. */
 export async function savePageRows(pageId: string, rows: Row[]): Promise<Page> {
   assertValidRows(rows)
+  return updatePage(pageId, { rows })
+}
+
+/** Switches a page's theme. */
+export async function savePageTheme(pageId: string, theme: string): Promise<Page> {
+  if (typeof theme !== 'string' || !theme.trim()) throw new Error('Theme name is required')
+  return updatePage(pageId, { theme })
+}
+
+async function updatePage(pageId: string, changes: Partial<Pick<Page, 'rows' | 'theme'>>) {
   return db.transaction('rw', db.pages, async () => {
     const page = await db.pages.get(pageId)
     if (!page || page.userId !== LOCAL_USER_ID) throw new Error(`Page not found: ${pageId}`)
-    const updated: Page = { ...page, rows, updatedAt: new Date().toISOString() }
+    const updated: Page = { ...page, ...changes, updatedAt: new Date().toISOString() }
     await db.pages.put(updated)
     return updated
   })

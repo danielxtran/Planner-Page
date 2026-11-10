@@ -6,6 +6,7 @@ import {
   applyPreset,
   clampResize,
   findWidget,
+  insertWidgetAfter,
   matchesPreset,
   moveRow,
   moveWidget,
@@ -13,6 +14,7 @@ import {
   removeWidget,
   resizeColumns,
   ROW_PRESETS,
+  updateWidgetConfig,
 } from './operations'
 
 const widget = (id: string): WidgetInstance => ({ id, type: 'todo', config: {} })
@@ -169,5 +171,35 @@ describe('widgets', () => {
     const rows = sample()
     expect(moveWidget(rows, 'nope', 'c1', 0)).toBe(rows)
     expect(moveWidget(rows, 'a', 'nope', 0)).toBe(rows)
+  })
+})
+
+describe('insertWidgetAfter', () => {
+  it('puts the new widget right below the given one', () => {
+    const next = insertWidgetAfter(sample(), 'a', widget('new'))
+    expect(contents(next)).toEqual({ c1: ['a', 'new', 'b'], c2: ['c'], c3: [] })
+    expect(() => assertValidRows(next)).not.toThrow()
+  })
+
+  it('ignores an unknown widget', () => {
+    const rows = sample()
+    expect(insertWidgetAfter(rows, 'nope', widget('new'))).toBe(rows)
+  })
+})
+
+describe('updateWidgetConfig', () => {
+  it("replaces one widget's settings and leaves the rest alone", () => {
+    const rows = sample()
+    const next = updateWidgetConfig(rows, 'b', { title: 'School' })
+    expect(findWidget(next, 'b')?.widget.config).toEqual({ title: 'School' })
+    expect(findWidget(next, 'a')?.widget).toBe(findWidget(rows, 'a')?.widget)
+    // The other row wasn't touched, so it's the very same object.
+    expect(next[1]).toBe(rows[1])
+  })
+
+  it('returns the same rows when the settings are unchanged or the widget is unknown', () => {
+    const rows = updateWidgetConfig(sample(), 'a', { title: 'x' })
+    expect(updateWidgetConfig(rows, 'a', { title: 'x' })).toBe(rows)
+    expect(updateWidgetConfig(rows, 'nope', { title: 'y' })).toBe(rows)
   })
 })

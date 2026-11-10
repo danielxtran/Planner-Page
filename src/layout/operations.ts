@@ -123,6 +123,32 @@ export function moveWidget(
   })
 }
 
+/** Puts `widget` directly below the widget `afterId`, in the same column. */
+export function insertWidgetAfter(rows: Row[], afterId: string, widget: WidgetInstance): Row[] {
+  const found = findWidget(rows, afterId)
+  if (!found) return rows
+  return mapColumn(rows, found.column.id, (column) => {
+    const widgets = [...column.widgets]
+    widgets.splice(found.index + 1, 0, widget)
+    return { ...column, widgets }
+  })
+}
+
+/** Replaces one widget's settings. Returns `rows` itself if the settings didn't change. */
+export function updateWidgetConfig(
+  rows: Row[],
+  widgetId: string,
+  config: Record<string, unknown>,
+): Row[] {
+  const found = findWidget(rows, widgetId)
+  // Settings are small JSON, so comparing the text is a simple, exact "did anything change".
+  if (!found || JSON.stringify(found.widget.config) === JSON.stringify(config)) return rows
+  return mapColumn(rows, found.column.id, (column) => ({
+    ...column,
+    widgets: column.widgets.map((w) => (w.id === widgetId ? { ...w, config } : w)),
+  }))
+}
+
 export interface WidgetLocation {
   widget: WidgetInstance
   column: Column

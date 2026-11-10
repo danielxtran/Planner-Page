@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from './db'
-import { assertValidRows, getHomePage, savePageRows, type Row } from './pages'
+import { assertValidRows, getHomePage, savePageRows, savePageTheme, type Row } from './pages'
 import { LOCAL_USER_ID } from './user'
 
 const oneRow = (): Row[] => [
@@ -30,6 +30,7 @@ describe('getHomePage', () => {
       id: expect.any(String),
       userId: LOCAL_USER_ID,
       name: 'Home',
+      theme: 'graph',
       rows: oneRow(),
       createdAt: '2026-01-01T09:00:00.000Z',
       updatedAt: '2026-01-01T09:00:00.000Z',
@@ -77,6 +78,23 @@ describe('savePageRows', () => {
 
   it('throws for a missing page', async () => {
     await expect(savePageRows('nope', [])).rejects.toThrow('Page not found')
+  })
+})
+
+describe('savePageTheme', () => {
+  it('changes only the theme and bumps updatedAt', async () => {
+    const page = await getHomePage(oneRow)
+    vi.setSystemTime(new Date('2026-01-02T09:00:00.000Z'))
+
+    const saved = await savePageTheme(page.id, 'bujo')
+
+    expect(saved).toEqual({ ...page, theme: 'bujo', updatedAt: '2026-01-02T09:00:00.000Z' })
+    expect(await db.pages.get(page.id)).toEqual(saved)
+  })
+
+  it('rejects an empty theme name', async () => {
+    const page = await getHomePage(oneRow)
+    await expect(savePageTheme(page.id, ' ')).rejects.toThrow('required')
   })
 })
 

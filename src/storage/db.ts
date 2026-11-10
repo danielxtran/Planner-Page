@@ -1,5 +1,6 @@
 import { Dexie, type EntityTable } from 'dexie'
 import type { Category } from './categories'
+import type { Note } from './notes'
 import type { Page } from './pages'
 import type { Task } from './tasks'
 
@@ -8,6 +9,7 @@ export const db = new Dexie('planner-hub') as Dexie & {
   tasks: EntityTable<Task, 'id'>
   categories: EntityTable<Category, 'id'>
   pages: EntityTable<Page, 'id'>
+  notes: EntityTable<Note, 'id'>
 }
 
 // Schema strings list the primary key first, then indexed fields only.
@@ -44,3 +46,21 @@ db.version(2)
 db.version(3).stores({
   pages: 'id, userId, createdAt',
 })
+
+// v4 (milestones 4-5): pages gain a `theme`; a notes table holds each notes
+// widget's rich text. Widget settings (like a to-do widget's saved filter) live
+// inside the page's layout JSON, which storage treats as opaque: each widget
+// reads its own settings with defaults for anything missing, so older layouts
+// need no migration for those.
+db.version(4)
+  .stores({
+    notes: 'id, userId, createdAt',
+  })
+  .upgrade((tx) =>
+    tx
+      .table('pages')
+      .toCollection()
+      .modify((page) => {
+        page.theme ??= 'graph'
+      }),
+  )

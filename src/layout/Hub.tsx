@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { resolveTheme } from '../theme/themes'
 import { HubToolbar } from './HubToolbar'
 import { LayoutGrid } from './LayoutGrid'
 import { useLayoutStore } from './layoutStore'
@@ -10,12 +11,22 @@ export function Hub() {
   const rows = useLayoutStore((s) => s.rows)
   const commit = useLayoutStore((s) => s.commit)
   const ensureLoaded = useLayoutStore((s) => s.ensureLoaded)
+  const theme = resolveTheme(useLayoutStore((s) => s.theme))
   // Normal use stays free of handles and outlines, so nothing gets dragged by accident.
   const [editing, setEditing] = useState(false)
 
   useEffect(() => {
     void ensureLoaded()
   }, [ensureLoaded])
+
+  // The theme is an attribute on <html>, so its CSS variables reach the whole
+  // page, including the body's paper background outside the React tree.
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    return () => {
+      delete document.documentElement.dataset.theme
+    }
+  }, [theme])
 
   return (
     <>
