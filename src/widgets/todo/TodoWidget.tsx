@@ -1,4 +1,6 @@
-import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useId, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { isUndoShortcut } from '../../state/keyboard'
+import { useUndoStore } from '../../state/undoStore'
 import { DEFAULT_PRIORITY, type Task } from '../../storage/tasks'
 import { todayString } from './dates'
 import { FilterBar } from './FilterBar'
@@ -16,19 +18,10 @@ import { useTasks } from './useTasks'
 const EMPTY_DETAILS: DetailsDraft = { priority: DEFAULT_PRIORITY, categoryId: null, dueDate: null }
 
 export function TodoWidget() {
-  const {
-    tasks,
-    categories,
-    loading,
-    error,
-    add,
-    toggle,
-    edit,
-    remove,
-    createCategory,
-    undo,
-    undoLabel,
-  } = useTasks()
+  const { tasks, categories, loading, add, toggle, edit, remove, createCategory } = useTasks()
+  const undo = useUndoStore((s) => s.undo)
+  // Unique per widget instance: a page can now hold several to-do widgets.
+  const headingId = useId()
   const [draft, setDraft] = useState('')
   const [draftDetails, setDraftDetails] = useState<DetailsDraft>(EMPTY_DETAILS)
   // In memory for now; in milestones 3-4 the filter becomes saved widget config.
@@ -58,19 +51,6 @@ export function TodoWidget() {
     draftCategoryId !== null ||
     draftDetails.dueDate !== null
 
-  // Ctrl/Cmd+Z anywhere on the page undoes the last task action, except while
-  // typing in a field, where it keeps doing normal text undo.
-  useEffect(() => {
-    function onKeyDown(e: globalThis.KeyboardEvent) {
-      if (isUndoShortcut(e) && !isEditable(e.target)) {
-        e.preventDefault()
-        void undo()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [undo])
-
   function changeFilter(next: TaskFilter) {
     setFilter(next)
     setHiddenNotice(null)
@@ -87,7 +67,8 @@ export function TodoWidget() {
   }
 
   // Right after quick-adding, the box is empty, so Ctrl+Z there has no text to
-  // undo. Treat it as "undo the last task action" instead.
+  // undo. Treat it as "undo the last action" instead. (The page-wide Ctrl+Z
+  // lives in the hub toolbar and skips text fields on purpose.)
   function handleDraftKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (isUndoShortcut(e) && draft === '') {
       e.preventDefault()
@@ -104,7 +85,7 @@ export function TodoWidget() {
 
   return (
     <section
-      aria-labelledby="todo-heading"
+      aria-labelledby={headingId}
       className="relative rounded-sm bg-card p-5 pt-7 shadow-[2px_3px_0_rgb(61_53_80/0.12)]"
     >
       {/* Washi tape strip, purely decorative. */}
@@ -114,7 +95,7 @@ export function TodoWidget() {
       />
 
       <header className="mb-3 flex items-baseline justify-between gap-2">
-        <h2 id="todo-heading" className="font-hand text-3xl font-bold">
+        <h2 id={headingId} className="font-hand text-3xl font-bold">
           To-do
         </h2>
         {tasks.length > 0 && (
@@ -150,12 +131,6 @@ export function TodoWidget() {
 
       {tasks.length > 0 && (
         <FilterBar filter={activeFilter} onChange={changeFilter} categories={categories} />
-      )}
-
-      {error && (
-        <p role="alert" className="mt-3 rounded-sm bg-rose px-3 py-2 text-sm">
-          {error}
-        </p>
       )}
 
       {hiddenNotice && (
@@ -202,30 +177,6 @@ export function TodoWidget() {
           </ul>
         </>
       )}
-
-      {undoLabel && (
-        <div className="mt-4 flex items-center justify-between gap-2 border-t border-dashed border-ink/20 pt-3 text-sm text-ink-soft">
-          <span className="truncate">Last: {undoLabel}</span>
-          <button
-            type="button"
-            onClick={() => void undo()}
-            className="shrink-0 rounded-full bg-sky px-3 py-1 text-ink hover:bg-sky/70"
-          >
-            Undo <kbd className="font-sans text-xs text-ink-soft">Ctrl+Z</kbd>
-          </button>
-        </div>
-      )}
     </section>
-  )
-}
-
-function isUndoShortcut(e: { key: string; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) {
-  return e.key.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey
-}
-
-function isEditable(target: EventTarget | null) {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
   )
 }

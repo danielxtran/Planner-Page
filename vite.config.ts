@@ -9,5 +9,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Default is 5s; full UI flows against IndexedDB can exceed that under parallel load.
+    testTimeout: 15_000,
   },
 })

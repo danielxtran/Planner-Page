@@ -1,11 +1,13 @@
 import { Dexie, type EntityTable } from 'dexie'
 import type { Category } from './categories'
+import type { Page } from './pages'
 import type { Task } from './tasks'
 
 // The one Dexie instance. Only modules in src/storage/ may import this.
 export const db = new Dexie('planner-hub') as Dexie & {
   tasks: EntityTable<Task, 'id'>
   categories: EntityTable<Category, 'id'>
+  pages: EntityTable<Page, 'id'>
 }
 
 // Schema strings list the primary key first, then indexed fields only.
@@ -35,3 +37,10 @@ db.version(2)
         task.dueDate ??= null
       }),
   )
+
+// v3 (milestone 3): a pages table holding each hub page's layout as JSON.
+// A brand-new table has no existing rows to migrate, so no .upgrade() is needed.
+// Only changed tables are listed; tables left out carry over from v2 unchanged.
+db.version(3).stores({
+  pages: 'id, userId, createdAt',
+})

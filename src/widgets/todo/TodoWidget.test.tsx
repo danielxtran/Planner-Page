@@ -1,15 +1,21 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { UndoControls } from '../../layout/UndoControls'
 import { db } from '../../storage/db'
 import { addDaysTo, todayString } from './dates'
+import { initialTasksState, useTasksStore } from './tasksStore'
 import { TodoWidget } from './TodoWidget'
 
-beforeEach(async () => {
-  await Promise.all([db.tasks.clear(), db.categories.clear()])
-})
+// Undo lives in the hub toolbar now, so tests render its controls beside the widget.
+const widgetWithUndo = (
+  <>
+    <UndoControls />
+    <TodoWidget />
+  </>
+)
 
 async function renderWidget() {
-  const result = render(<TodoWidget />)
+  const result = render(widgetWithUndo)
   await screen.findByText('Nothing to do. Enjoy it!')
   return result
 }
@@ -43,8 +49,9 @@ describe('TodoWidget', () => {
     await addViaQuickAdd('Buy washi tape')
     expect(screen.getByRole('textbox', { name: 'New task' })).toHaveValue('')
 
-    // A fresh mount reads from IndexedDB again, like a page refresh.
+    // Like a page refresh: drop the in-memory store so the next mount reads IndexedDB again.
     unmount()
+    useTasksStore.setState(initialTasksState)
     render(<TodoWidget />)
     expect(await screen.findByRole('checkbox', { name: 'Buy washi tape' })).not.toBeChecked()
   })
