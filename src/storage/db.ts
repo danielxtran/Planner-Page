@@ -1,4 +1,5 @@
 import { Dexie, type EntityTable } from 'dexie'
+import type { CalendarEvent, CalendarSource } from './calendars'
 import type { Category } from './categories'
 import type { StoredImage } from './images'
 import type { Note } from './notes'
@@ -12,6 +13,8 @@ export const db = new Dexie('planner-hub') as Dexie & {
   pages: EntityTable<Page, 'id'>
   notes: EntityTable<Note, 'id'>
   images: EntityTable<StoredImage, 'id'>
+  calendarSources: EntityTable<CalendarSource, 'id'>
+  calendarEvents: EntityTable<CalendarEvent, 'id'>
 }
 
 // Schema strings list the primary key first, then indexed fields only.
@@ -70,4 +73,11 @@ db.version(4)
 // v5: an images table for image widgets. New table, nothing to migrate.
 db.version(5).stores({
   images: 'id, userId, createdAt',
+})
+
+// v6 (milestone 6): connected calendars and cached copies of their events.
+// Events are indexed by sourceId so a sync or removal can find one calendar's events.
+db.version(6).stores({
+  calendarSources: 'id, userId, createdAt',
+  calendarEvents: 'id, userId, sourceId, start',
 })

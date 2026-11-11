@@ -1,5 +1,6 @@
 import { lazy, type ComponentType } from 'react'
 import type { WidgetInstance } from '../storage/pages'
+import { EmbedWidget } from './embed/EmbedWidget'
 import { ImageWidget } from './image/ImageWidget'
 import { IMAGE_STARTERS, imageStarterConfig } from './image/imageConfig'
 import { readTextConfig, TEXT_STARTERS, textStarterConfig, variantLabel } from './text/textConfig'
@@ -11,6 +12,10 @@ import { TodoWidget } from './todo/TodoWidget'
 // WidgetFrame wraps widgets in <Suspense> to show "Loading…" meanwhile.
 const NotesWidget = lazy(() =>
   import('./notes/NotesWidget').then((m) => ({ default: m.NotesWidget })),
+)
+// Same for calendars: ical.js (and MSAL, on first Outlook use) only download when needed.
+const CalendarWidget = lazy(() =>
+  import('./calendar/CalendarWidget').then((m) => ({ default: m.CalendarWidget })),
 )
 
 export interface WidgetProps {
@@ -103,6 +108,22 @@ export const WIDGET_DEFINITIONS: readonly WidgetDefinition[] = [
       description: s.description,
       config: () => ({ ...imageStarterConfig(s.config) }),
     })),
+  },
+  {
+    type: 'calendar',
+    label: 'Calendar',
+    defaultTitle: 'Calendar',
+    description: 'The next few days from Canvas, Google, and Outlook, with tasks due.',
+    Component: CalendarWidget,
+    defaultConfig: () => ({}),
+  },
+  {
+    type: 'embed',
+    label: 'Embed',
+    defaultTitle: 'Embed',
+    description: 'A YouTube video, Spotify playlist, map, or public calendar.',
+    Component: EmbedWidget,
+    defaultConfig: () => ({ url: '' }),
   },
 ]
 

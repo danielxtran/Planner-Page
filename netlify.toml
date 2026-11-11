@@ -1,0 +1,7 @@
+# Netlify settings. (On Vercel, nothing is needed: it detects Vite and the api/ folder itself.)
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"

@@ -263,6 +263,21 @@ describe('Hub', () => {
       expect(widgets[1]).toMatchObject({ type: 'text', config: { variant: 'quote' } })
     })
 
+    it('adds a calendar and an embed from the menu', async () => {
+      await renderHub()
+      startEditing()
+      fireEvent.click(button('Add widget to column 1 of row 1'))
+      fireEvent.click(button(/^Calendar/))
+      expect(await screen.findByRole('heading', { name: 'Calendar' })).toBeInTheDocument()
+      expect(await screen.findByText('No calendars yet.')).toBeInTheDocument()
+
+      fireEvent.click(button('Add widget to column 1 of row 1'))
+      fireEvent.click(button(/^Embed/))
+      expect(await screen.findByRole('textbox', { name: 'Link to embed' })).toBeInTheDocument()
+      const types = (await savedRows())[0].columns[0].widgets.map((w) => w.type)
+      expect(types).toEqual(['todo', 'calendar', 'embed'])
+    })
+
     it('switches theme, saves it, and undoes it', async () => {
       await renderHub()
       expect(document.documentElement.dataset.theme).toBe('graph')
