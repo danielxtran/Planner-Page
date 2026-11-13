@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { messageOf } from '../../state/errorStore'
-import { EMPTY_NOTE_DOC, getNote, type NoteDoc } from '../../storage/notes'
+import { EMPTY_NOTE_DOC, getNote, saveNote, type NoteDoc } from '../../storage/notes'
 import type { WidgetProps } from '../registry'
 import { WidgetCard } from '../WidgetCard'
 import { NoteEditor } from './NoteEditor'
@@ -49,7 +49,13 @@ export function NotesWidget({ widget, onConfigChange }: WidgetProps) {
         </p>
       ) : (
         // Keyed by version: after an undo restores older text, a fresh editor starts from it.
-        <NoteEditor key={key} noteId={noteId} initialDoc={loaded.doc} name={shownTitle} />
+        <NoteEditor
+          key={key}
+          docKey={noteId}
+          initialDoc={loaded.doc}
+          name={shownTitle}
+          save={(doc) => saveNote(noteId, doc)}
+        />
       )}
     </WidgetCard>
   )

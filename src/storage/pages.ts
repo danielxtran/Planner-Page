@@ -71,6 +71,65 @@ export async function getHomePage(defaultRows: () => Row[]): Promise<Page> {
   })
 }
 
+/** Every page, in the order they were made (the order of the page tabs). */
+export async function listPages(): Promise<Page[]> {
+  return db.pages.where('userId').equals(LOCAL_USER_ID).sortBy('createdAt')
+}
+
+export const MAX_PAGE_NAME_LENGTH = 40
+
+function cleanName(name: string): string {
+  const trimmed = name.trim().slice(0, MAX_PAGE_NAME_LENGTH)
+  if (!trimmed) throw new Error('Give the page a name')
+  return trimmed
+}
+
+/** A new page, last in the tab order. */
+export async function createPage(
+  name: string,
+  rows: Row[],
+  theme = DEFAULT_PAGE_THEME,
+): Promise<Page> {
+  assertValidRows(rows)
+  const now = new Date().toISOString()
+  const page: Page = {
+    id: crypto.randomUUID(),
+    userId: LOCAL_USER_ID,
+    name: cleanName(name),
+    theme,
+    rows,
+    createdAt: now,
+    updatedAt: now,
+  }
+  await db.pages.add(page)
+  return page
+}
+
+export async function renamePage(pageId: string, name: string): Promise<Page> {
+  return updatePage(pageId, { name: cleanName(name) })
+}
+
+/**
+ * Deletes a page and hands it back, so undo can restore it exactly. The data
+ * its widgets point to (tasks, notes, images) is shared or kept, like removing
+ * a widget: deleting a page never deletes your writing.
+ */
+export async function deletePage(pageId: string): Promise<Page> {
+  return db.transaction('rw', db.pages, async () => {
+    const page = await db.pages.get(pageId)
+    if (!page || page.userId !== LOCAL_USER_ID) throw new Error(`Page not found: ${pageId}`)
+    const count = await db.pages.where('userId').equals(LOCAL_USER_ID).count()
+    if (count <= 1) throw new Error("You can't delete your only page")
+    await db.pages.delete(pageId)
+    return page
+  })
+}
+
+/** Puts a deleted page back (same id, same place in the tab order). */
+export async function restorePage(page: Page): Promise<void> {
+  await db.pages.put(page)
+}
+
 /** Replaces a page's layout. Rejects a malformed layout without saving anything. */
 export async function savePageRows(pageId: string, rows: Row[]): Promise<Page> {
   assertValidRows(rows)
@@ -83,7 +142,7 @@ export async function savePageTheme(pageId: string, theme: string): Promise<Page
   return updatePage(pageId, { theme })
 }
 
-async function updatePage(pageId: string, changes: Partial<Pick<Page, 'rows' | 'theme'>>) {
+async function updatePage(pageId: string, changes: Partial<Pick<Page, 'rows' | 'theme' | 'name'>>) {
   return db.transaction('rw', db.pages, async () => {
     const page = await db.pages.get(pageId)
     if (!page || page.userId !== LOCAL_USER_ID) throw new Error(`Page not found: ${pageId}`)

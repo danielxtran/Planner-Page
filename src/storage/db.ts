@@ -2,6 +2,7 @@ import { Dexie, type EntityTable } from 'dexie'
 import type { CalendarEvent, CalendarSource } from './calendars'
 import type { Category } from './categories'
 import type { StoredImage } from './images'
+import type { JournalEntry } from './journal'
 import type { StickyBoard, StickyNote } from './stickies'
 import type { Note } from './notes'
 import type { Page } from './pages'
@@ -18,6 +19,7 @@ export const db = new Dexie('planner-hub') as Dexie & {
   calendarEvents: EntityTable<CalendarEvent, 'id'>
   stickyBoards: EntityTable<StickyBoard, 'id'>
   stickyNotes: EntityTable<StickyNote, 'id'>
+  journalEntries: EntityTable<JournalEntry, 'id'>
 }
 
 // Schema strings list the primary key first, then indexed fields only.
@@ -90,4 +92,11 @@ db.version(6).stores({
 db.version(7).stores({
   stickyBoards: 'id, userId, createdAt',
   stickyNotes: 'id, userId, boardId, createdAt',
+})
+
+// v8 (milestone 7): journal entries, one per day. '&[userId+date]' is a unique
+// compound index: looking up "my entry for this date" is fast, and a second
+// entry for the same day is refused by the database itself.
+db.version(8).stores({
+  journalEntries: 'id, userId, &[userId+date]',
 })

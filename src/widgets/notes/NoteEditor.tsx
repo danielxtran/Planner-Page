@@ -8,18 +8,20 @@ import {
   type JSONContent,
 } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useErrorStore } from '../../state/errorStore'
 import { useUndoStore } from '../../state/undoStore'
-import { saveNote, type NoteDoc } from '../../storage/notes'
+import type { NoteDoc } from '../../storage/notes'
 import { isSafeLink, normalizeLink } from './links'
 import { useNotesStore } from './notesStore'
 
 /** How long typing must pause before the note saves. Short enough that a refresh loses nothing. */
 export const NOTE_SAVE_DELAY_MS = 600
 
-// Defined once, outside the component: TipTap rebuilds the editor if the extension list changes.
-const extensions = [
+const DEFAULT_PLACEHOLDER = 'Jot something down… (try "- " or "[ ] ")'
+
+// Built once per placeholder (see useMemo below): TipTap rebuilds the editor if the extension list changes.
+const buildExtensions = (placeholder: string) => [
   StarterKit.configure({
     heading: { levels: [2, 3] },
     // A planner rarely needs code blocks; leaving them out keeps the toolbar and shortcuts simple.
@@ -33,23 +35,37 @@ const extensions = [
   }),
   TaskList,
   TaskItem.configure({ nested: true }),
-  Placeholder.configure({ placeholder: 'Jot something down… (try "- " or "[ ] ")' }),
+  Placeholder.configure({ placeholder }),
 ]
 
 interface NoteEditorProps {
-  noteId: string
+  /**
+   * Names this document (a note id, a journal date). When an undo replaces the
+   * text, the editor showing it is remounted; see useNotesStore.versions.
+   */
+  docKey: string
   initialDoc: NoteDoc
   /** The widget's title, for accessible names and undo labels. */
   name: string
+  /** Writes the document to storage. The editor decides when; this decides where. */
+  save: (doc: NoteDoc) => Promise<unknown>
+  placeholder?: string
 }
 
 /**
- * The rich-text editor for one note. It saves on its own, shortly after you
+ * The rich-text editor used by notes and the journal. It saves on its own, shortly after you
  * stop typing. For undo, typing inside the note uses the editor's own Ctrl+Z;
  * each stretch of editing (from focusing the note to leaving it) also becomes
  * one step on the hub's undo stack, so the toolbar's Undo can take it back later.
  */
-export function NoteEditor({ noteId, initialDoc, name }: NoteEditorProps) {
+export function NoteEditor({
+  docKey,
+  initialDoc,
+  name,
+  save,
+  placeholder = DEFAULT_PLACEHOLDER,
+}: NoteEditorProps) {
+  const extensions = useMemo(() => buildExtensions(placeholder), [placeholder])
   // The contents the undo stack already knows about. A finished editing stretch
   // that differs from this becomes an undo step back to it.
   const baseline = useRef({ doc: initialDoc, text: JSON.stringify(initialDoc) })
@@ -65,7 +81,7 @@ export function NoteEditor({ noteId, initialDoc, name }: NoteEditorProps) {
     if (!doc) return saving.current
     unsaved.current = null
     saving.current = saving.current
-      .then(() => saveNote(noteId, doc))
+      .then(() => save(doc))
       .then(
         () => undefined,
         (e: unknown) => useErrorStore.getState().report(e, "Couldn't save your note: "),
@@ -83,7 +99,9 @@ export function NoteEditor({ noteId, initialDoc, name }: NoteEditorProps) {
       label: `edit ${name}`,
       undo: async () => {
         await saved
-        await useNotesStore.getState().restore(noteId, before)
+        await save(before)
+        // Remount the editor (wherever it is now) so it shows the restored text.
+        useNotesStore.getState().bump(docKey)
       },
     })
   }

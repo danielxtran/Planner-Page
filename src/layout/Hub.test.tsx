@@ -136,7 +136,7 @@ describe('Hub', () => {
     await waitFor(() => expect(screen.queryByRole('group', { name: 'Row 1' })).toBeNull())
 
     fireEvent.click(button('Done editing'))
-    expect(screen.getByText(/your hub is empty/i)).toBeInTheDocument()
+    expect(screen.getByText(/this page is empty/i)).toBeInTheDocument()
   })
 
   it('keeps the layout after a refresh', async () => {

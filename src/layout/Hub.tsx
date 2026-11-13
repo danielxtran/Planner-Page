@@ -4,11 +4,13 @@ import { HubToolbar } from './HubToolbar'
 import { LayoutGrid } from './LayoutGrid'
 import { useLayoutStore } from './layoutStore'
 import { addRow } from './operations'
+import { PageTabs } from './PageTabs'
 
-/** The hub page: toolbar plus the widget grid, with an edit mode for rearranging it. */
+/** The hub: page tabs, toolbar, and the open page's widget grid, with an edit mode for rearranging it. */
 export function Hub() {
   const status = useLayoutStore((s) => s.status)
   const rows = useLayoutStore((s) => s.rows)
+  const pageId = useLayoutStore((s) => s.pageId)
   const commit = useLayoutStore((s) => s.commit)
   const ensureLoaded = useLayoutStore((s) => s.ensureLoaded)
   const theme = resolveTheme(useLayoutStore((s) => s.theme))
@@ -30,6 +32,8 @@ export function Hub() {
 
   return (
     <>
+      {/* A new page is empty, so it opens straight into editing. */}
+      <PageTabs onPageAdded={() => setEditing(true)} />
       <HubToolbar editing={editing} onToggleEditing={() => setEditing((e) => !e)} />
 
       {(status === 'idle' || status === 'loading') && <p className="text-ink-soft">Loading…</p>}
@@ -37,10 +41,12 @@ export function Hub() {
       {status === 'ready' &&
         (rows.length === 0 && !editing ? (
           <p className="font-hand text-2xl text-ink-soft">
-            Your hub is empty. Click "Edit layout" to add a row and some widgets.
+            This page is empty. Click "Edit layout" to add a row and some widgets.
           </p>
         ) : (
           <LayoutGrid
+            // A fresh grid per page, so nothing mid-drag carries over to another page.
+            key={pageId}
             rows={rows}
             editing={editing}
             onCommit={(label, next) => void commit(label, next)}

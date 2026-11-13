@@ -9,6 +9,7 @@ import { useErrorStore } from '../state/errorStore'
 import { useUndoStore } from '../state/undoStore'
 import { db } from '../storage/db'
 import { initialCalendarState, useCalendarStore } from '../widgets/calendar/calendarStore'
+import { initialJournalState, useJournalStore } from '../widgets/journal/journalStore'
 import { useNotesStore } from '../widgets/notes/notesStore'
 import { useStickyStore } from '../widgets/sticky/stickyStore'
 import { initialTasksState, useTasksStore } from '../widgets/todo/tasksStore'
@@ -31,6 +32,8 @@ configure({ asyncUtilTimeout: 3000 })
 // Every test starts from an empty database and fresh stores. Zustand stores are
 // module-level singletons, so without this one test's state would leak into the next.
 beforeEach(async () => {
+  // (Server tests run in plain Node, which may have no localStorage.)
+  if (typeof localStorage !== 'undefined') localStorage.clear()
   await Promise.all(db.tables.map((table) => table.clear()))
   useTasksStore.setState(initialTasksState)
   useLayoutStore.setState(initialLayoutState)
@@ -39,6 +42,7 @@ beforeEach(async () => {
   useNotesStore.setState({ versions: {} })
   useCalendarStore.setState(initialCalendarState)
   useStickyStore.setState({ boards: {} })
+  useJournalStore.setState(initialJournalState)
 })
 
 afterEach(() => {

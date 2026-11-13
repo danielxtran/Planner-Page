@@ -14,6 +14,10 @@ import { TodoWidget } from './todo/TodoWidget'
 const NotesWidget = lazy(() =>
   import('./notes/NotesWidget').then((m) => ({ default: m.NotesWidget })),
 )
+// The journal shares the notes editor, so it's split off the same way.
+const JournalWidget = lazy(() =>
+  import('./journal/JournalWidget').then((m) => ({ default: m.JournalWidget })),
+)
 // Same for calendars: ical.js (and MSAL, on first Outlook use) only download when needed.
 const CalendarWidget = lazy(() =>
   import('./calendar/CalendarWidget').then((m) => ({ default: m.CalendarWidget })),
@@ -109,6 +113,15 @@ export const WIDGET_DEFINITIONS: readonly WidgetDefinition[] = [
       description: s.description,
       config: () => ({ ...imageStarterConfig(s.config) }),
     })),
+  },
+  {
+    type: 'journal',
+    label: 'Journal',
+    defaultTitle: 'Journal',
+    description: 'A daily entry with a prompt and a mood, and a calendar of past days.',
+    Component: JournalWidget,
+    // No settings of its own: there's one journal, shared by every journal widget.
+    defaultConfig: () => ({}),
   },
   {
     type: 'stickies',
