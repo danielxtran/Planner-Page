@@ -1,7 +1,8 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { Row } from '../storage/pages'
+import { collapsedHeight, useColumnsSideBySide } from './columnOverflow'
 import { ColumnView } from './ColumnView'
 import { DragHandle } from './DragHandle'
 import type { DragData, EditorActions } from './editorTypes'
@@ -27,6 +28,18 @@ export function RowView({ row, index, editing, actions }: RowViewProps) {
     isDragging,
   } = useSortable({ id: row.id, data, disabled: !editing })
   const gridRef = useRef<HTMLDivElement>(null)
+  // Each column's natural content height, reported by the column itself.
+  const [heights, setHeights] = useState<Record<string, number>>({})
+  const sideBySide = useColumnsSideBySide()
+  const measure = useCallback(
+    (columnId: string, height: number) =>
+      setHeights((h) => (h[columnId] === height ? h : { ...h, [columnId]: height })),
+    [],
+  )
+  // Only this row's current columns count (a removed column's old height would linger otherwise).
+  const current = Object.fromEntries(
+    row.columns.filter((c) => heights[c.id] !== undefined).map((c) => [c.id, heights[c.id]]),
+  )
 
   return (
     <div
@@ -93,6 +106,10 @@ export function RowView({ row, index, editing, actions }: RowViewProps) {
             editing={editing}
             actions={actions}
             gridRef={gridRef}
+            onMeasure={measure}
+            // No cutting while rearranging (you need to see everything) or on
+            // phones, where columns stack and there's no row to even out.
+            collapseTo={editing || !sideBySide ? null : collapsedHeight(current, column.id)}
           />
         ))}
       </div>

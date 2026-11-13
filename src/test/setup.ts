@@ -10,6 +10,7 @@ import { useUndoStore } from '../state/undoStore'
 import { db } from '../storage/db'
 import { initialCalendarState, useCalendarStore } from '../widgets/calendar/calendarStore'
 import { useNotesStore } from '../widgets/notes/notesStore'
+import { useStickyStore } from '../widgets/sticky/stickyStore'
 import { initialTasksState, useTasksStore } from '../widgets/todo/tasksStore'
 
 // jsdom doesn't do layout, so it lacks the measuring functions ProseMirror (the
@@ -37,6 +38,7 @@ beforeEach(async () => {
   useErrorStore.setState({ message: null })
   useNotesStore.setState({ versions: {} })
   useCalendarStore.setState(initialCalendarState)
+  useStickyStore.setState({ boards: {} })
 })
 
 afterEach(() => {

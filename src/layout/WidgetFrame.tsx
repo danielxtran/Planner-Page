@@ -43,7 +43,9 @@ export function WidgetFrame({ widget, editing, onRemove }: WidgetFrameProps) {
       // Translate, not Transform: widgets differ in height, and a scale would squash them.
       style={{ transform: CSS.Translate.toString(transform), transition }}
       // The original stays behind as a faded placeholder; the drag overlay follows the pointer.
-      className={isDragging ? 'opacity-40' : undefined}
+      // @container: widgets size themselves by this box's width (their column),
+      // not the window's, so a widget in a narrow column gets its compact layout.
+      className={`@container min-w-0 ${isDragging ? 'opacity-40' : ''}`}
     >
       {editing && (
         <div className="mb-1 flex items-center gap-1 rounded-sm bg-butter/70 px-1 text-sm">

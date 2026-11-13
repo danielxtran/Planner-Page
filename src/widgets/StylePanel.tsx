@@ -39,7 +39,8 @@ export function StylePanel({
 export function OptionRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1.5">
-      <span aria-hidden className="w-20 shrink-0 text-ink-soft">
+      {/* Its own line in a narrow widget, a fixed-width label column when there's room. */}
+      <span aria-hidden className="w-full shrink-0 text-ink-soft @2xs:w-20">
         {label}
       </span>
       {children}

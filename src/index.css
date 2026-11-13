@@ -94,6 +94,27 @@
     background-color: color-mix(in srgb, var(--color-lavender) 80%, transparent);
   }
 
+  /* The sticky-notes pad: a slightly crooked square of paper with a strip of tape. */
+  .sticky-pad {
+    position: relative;
+    rotate: -0.6deg;
+    box-shadow: 3px 4px 0 rgb(61 53 80 / 0.12);
+  }
+  .sticky-pad::before {
+    content: '';
+    position: absolute;
+    top: -0.6rem;
+    left: 50%;
+    width: 4.5rem;
+    height: 1.2rem;
+    translate: -50% 0;
+    rotate: 2deg;
+    background-color: color-mix(in srgb, var(--color-sky) 80%, transparent);
+  }
+  .sticky-slip {
+    box-shadow: 2px 3px 0 rgb(61 53 80 / 0.14);
+  }
+
   /* Instant-film frame: thin white border, thick bottom for the caption. */
   .polaroid-frame {
     background-color: #fffefb;

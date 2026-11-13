@@ -2,6 +2,7 @@ import { Dexie, type EntityTable } from 'dexie'
 import type { CalendarEvent, CalendarSource } from './calendars'
 import type { Category } from './categories'
 import type { StoredImage } from './images'
+import type { StickyBoard, StickyNote } from './stickies'
 import type { Note } from './notes'
 import type { Page } from './pages'
 import type { Task } from './tasks'
@@ -15,6 +16,8 @@ export const db = new Dexie('planner-hub') as Dexie & {
   images: EntityTable<StoredImage, 'id'>
   calendarSources: EntityTable<CalendarSource, 'id'>
   calendarEvents: EntityTable<CalendarEvent, 'id'>
+  stickyBoards: EntityTable<StickyBoard, 'id'>
+  stickyNotes: EntityTable<StickyNote, 'id'>
 }
 
 // Schema strings list the primary key first, then indexed fields only.
@@ -80,4 +83,11 @@ db.version(5).stores({
 db.version(6).stores({
   calendarSources: 'id, userId, createdAt',
   calendarEvents: 'id, userId, sourceId, start',
+})
+
+// v7: sticky-note widgets. A board per widget (its pad), and the notes stuck
+// aside on it, indexed by boardId to list one widget's pile.
+db.version(7).stores({
+  stickyBoards: 'id, userId, createdAt',
+  stickyNotes: 'id, userId, boardId, createdAt',
 })

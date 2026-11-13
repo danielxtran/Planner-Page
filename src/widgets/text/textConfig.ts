@@ -67,8 +67,8 @@ export const TEXT_STARTERS: { label: string; description: string; config: Partia
       config: { variant: 'label', font: 'typewriter', size: 'lg', background: 'peach' },
     },
     {
-      label: 'Sticky note',
-      description: 'A little square note, slightly tilted.',
+      label: 'Note card',
+      description: 'A little square card of colored paper, slightly tilted.',
       config: { variant: 'sticky', font: 'marker', size: 'md', background: 'butter' },
     },
   ]

@@ -149,7 +149,8 @@ export function FilterBar({ filter, onChange, categories, onSaveAsWidget }: Filt
 function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1.5">
-      <span aria-hidden className="w-16 shrink-0 text-ink-soft">
+      {/* Own line in a narrow widget; a label column once it is wider than 18rem. */}
+      <span aria-hidden className="w-full shrink-0 text-ink-soft @2xs:w-16">
         {label}
       </span>
       {children}

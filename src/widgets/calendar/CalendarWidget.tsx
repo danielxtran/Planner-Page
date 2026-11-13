@@ -63,7 +63,7 @@ export function CalendarWidget({ widget, onConfigChange }: WidgetProps) {
       onRename={(title) => save('rename widget', { title })}
       tape="sky"
       aside={
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           {shownSources.length > 0 && (
             <button
               type="button"
@@ -131,29 +131,34 @@ export function CalendarWidget({ widget, onConfigChange }: WidgetProps) {
                         className={`mt-1.5 size-2.5 shrink-0 rounded-full border border-ink/30 ${item.color ? PASTEL_BG[item.color] : ''}`}
                       />
                     )}
-                    <span className="w-16 shrink-0 text-ink-soft">
-                      {item.time ?? (item.kind === 'task' ? 'Task' : 'All day')}
-                    </span>
-                    <span className="min-w-0 flex-1 break-words">
-                      {item.url ? (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline decoration-dashed underline-offset-4 hover:decoration-solid"
-                        >
-                          {item.title}
-                          <span className="sr-only"> (opens in a new tab)</span>
-                        </a>
-                      ) : (
-                        item.title
-                      )}
-                      {item.overdue && (
-                        <span className="ml-1.5 rounded-full bg-rose px-1.5 text-xs">overdue</span>
-                      )}
-                      {item.location && (
-                        <span className="block text-xs text-ink-soft">{item.location}</span>
-                      )}
+                    {/* Narrow widget: time sits above the title. Wider than 18rem: in its own column. */}
+                    <span className="flex min-w-0 flex-1 flex-col @2xs:flex-row @2xs:gap-2">
+                      <span className="shrink-0 text-xs text-ink-soft @2xs:w-16 @2xs:text-sm">
+                        {item.time ?? (item.kind === 'task' ? 'Task' : 'All day')}
+                      </span>
+                      <span className="min-w-0 flex-1 wrap-anywhere">
+                        {item.url ? (
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline decoration-dashed underline-offset-4 hover:decoration-solid"
+                          >
+                            {item.title}
+                            <span className="sr-only"> (opens in a new tab)</span>
+                          </a>
+                        ) : (
+                          item.title
+                        )}
+                        {item.overdue && (
+                          <span className="ml-1.5 rounded-full bg-rose px-1.5 text-xs">
+                            overdue
+                          </span>
+                        )}
+                        {item.location && (
+                          <span className="block text-xs text-ink-soft">{item.location}</span>
+                        )}
+                      </span>
                     </span>
                   </li>
                 ))}

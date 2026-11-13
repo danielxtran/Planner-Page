@@ -55,7 +55,8 @@ export function WidgetCard({
   return (
     <section
       aria-labelledby={headingId}
-      className="widget-card relative rounded-sm p-5 pt-7"
+      // Roomier padding once the widget is wider than 18rem (a container query: see WidgetFrame).
+      className="widget-card relative rounded-sm p-3 pt-6 @2xs:p-5 @2xs:pt-7"
       style={{ '--tape': `var(--color-${tape})` } as CSSProperties}
     >
       {/* Washi tape strip, purely decorative. */}
@@ -64,7 +65,8 @@ export function WidgetCard({
         className="washi absolute -top-3 left-1/2 h-6 w-24 -translate-x-1/2 -rotate-2"
       />
 
-      <header className="group mb-3 flex items-baseline justify-between gap-2">
+      {/* flex-wrap: in a narrow column the buttons (`aside`) drop under the title instead of overlapping it. */}
+      <header className="group mb-3 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
         {renaming ? (
           <input
             type="text"
@@ -82,8 +84,9 @@ export function WidgetCard({
             className="min-w-0 flex-1 rounded-sm border-2 border-ink/50 bg-paper px-2 font-hand text-3xl font-bold focus:outline-none"
           />
         ) : (
-          <div className="flex min-w-0 items-baseline gap-1">
-            <h2 id={headingId} className="font-hand text-3xl font-bold break-words">
+          <div className="flex min-w-0 flex-1 basis-32 items-baseline gap-1">
+            {/* wrap-anywhere: even one very long word breaks instead of widening the card. */}
+            <h2 id={headingId} className="min-w-0 font-hand text-3xl font-bold wrap-anywhere">
               {title}
             </h2>
             {/* Hidden until hover/focus on mouse devices; always there on touch screens. */}
@@ -106,7 +109,7 @@ export function WidgetCard({
             </button>
           </div>
         )}
-        {aside && <div className="shrink-0 text-sm text-ink-soft">{aside}</div>}
+        {aside && <div className="ml-auto max-w-full text-sm text-ink-soft">{aside}</div>}
       </header>
 
       {children}

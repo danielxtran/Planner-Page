@@ -2,6 +2,7 @@ import { lazy, type ComponentType } from 'react'
 import type { WidgetInstance } from '../storage/pages'
 import { EmbedWidget } from './embed/EmbedWidget'
 import { ImageWidget } from './image/ImageWidget'
+import { StickyNotesWidget } from './sticky/StickyNotesWidget'
 import { IMAGE_STARTERS, imageStarterConfig } from './image/imageConfig'
 import { readTextConfig, TEXT_STARTERS, textStarterConfig, variantLabel } from './text/textConfig'
 import { TextWidget } from './text/TextWidget'
@@ -108,6 +109,15 @@ export const WIDGET_DEFINITIONS: readonly WidgetDefinition[] = [
       description: s.description,
       config: () => ({ ...imageStarterConfig(s.config) }),
     })),
+  },
+  {
+    type: 'stickies',
+    label: 'Sticky notes',
+    defaultTitle: 'Sticky notes',
+    description: 'Jot quick thoughts, stick them aside, and look back through the pile.',
+    Component: StickyNotesWidget,
+    // Its own board, so two sticky widgets keep two separate piles.
+    defaultConfig: () => ({ boardId: crypto.randomUUID() }),
   },
   {
     type: 'calendar',

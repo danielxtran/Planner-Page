@@ -9,7 +9,7 @@ export const VARIANTS = [
   { id: 'quote', label: 'Quote' },
   { id: 'callout', label: 'Callout' },
   { id: 'label', label: 'Cut-out label' },
-  { id: 'sticky', label: 'Sticky note' },
+  { id: 'sticky', label: 'Note card' },
 ] as const
 
 /**
